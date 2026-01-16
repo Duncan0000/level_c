@@ -13,7 +13,7 @@
             background-color: #FDF6E3;
         }
 
-        /* 馬卡龍色系 - 針對運動按摩調整一點活力感 */
+        /* 馬卡龍色系 */
         .macaron-pink { background-color: #FFB7B2; }
         .macaron-green { background-color: #B5EAD7; }
         .macaron-purple { background-color: #C7CEEA; }
@@ -72,11 +72,11 @@
             <h2 class="text-4xl md:text-5xl font-bold text-gray-700 mb-8 leading-tight">
                 C級運動按摩<br>學科測驗
             </h2>
-            <div class="bg-white px-6 py-4 rounded-xl shadow-sm mb-12 border-2 border-[#B5EAD7]">
+            <div class="bg-white px-6 py-4 rounded-xl shadow-sm mb-12 border-2 border-[#B5EAD7] w-full max-w-lg">
                 <p class="text-lg md:text-xl text-gray-500 font-bold mb-1">題庫來源：</p>
-                <p class="text-xl md:text-2xl font-black text-[#FF9AA2]">中華民國運動促進協會 官方講義</p>
-                <div class="w-full h-0.5 bg-gray-100 my-2"></div>
-                <p class="text-sm text-gray-400">隨機抽選 10 題測驗</p>
+                <p class="text-xl md:text-2xl font-black text-[#FF9AA2] leading-relaxed">中華民國運動促進協會<br>官方講義</p>
+                <div class="w-full h-0.5 bg-gray-100 my-3"></div>
+                <p class="text-sm text-gray-400">精選核心題庫・隨機抽選 10 題</p>
             </div>
             
             <div class="grid grid-cols-2 gap-4 mb-12 opacity-80">
@@ -149,8 +149,8 @@
     </div>
 
     <script>
-        // --- Data: Question Bank for Level C Sports Massage ---
-        // Derived from the "SMR-C" and "Untitled Design.pdf" content provided
+        // --- Data: Question Bank for Level C Sports Massage (Core Only) ---
+        // Contains approx 30 unique questions without duplication loop
         const coreQuestionBank = [
             {
                 question: "肌筋膜(Myofascia)的定義，下列敘述何者最為精確？",
@@ -283,17 +283,6 @@
                 ],
                 answer: "感覺器官",
                 explanation: "肌筋膜負責感覺通訊，向大腦回報關於位置、壓力與張力的本體感覺資訊。"
-            },
-            {
-                question: "SMR-C 的全名是？",
-                options: [
-                    "Scientific Myofascial Release Concept",
-                    "Sports Massage Recovery Center",
-                    "Super Muscle Relaxation Class",
-                    "Systematic Massage Recovery Core"
-                ],
-                answer: "Scientific Myofascial Release Concept",
-                explanation: "即「科學化肌筋膜放鬆技術」。"
             },
             {
                 question: "在髖伸直測試 (Hip Extension Test) 中，若腿後肌群過度用力甚至抽筋，這代表？",
@@ -429,13 +418,6 @@
             }
         ];
 
-        // --- Expansion Logic (To reach 200 items in system) ---
-        let questionBank = [...coreQuestionBank];
-        while (questionBank.length < 200) {
-            questionBank = questionBank.concat(coreQuestionBank.map(q => ({...q})));
-        }
-        if (questionBank.length > 200) questionBank = questionBank.slice(0, 200);
-
         // --- App Logic ---
         let currentQuestions = [];
         let currentQuestionIndex = 0;
@@ -456,10 +438,13 @@
             userAnswers = [];
             secondsElapsed = 0;
             
-            // Deep copy and shuffle
-            const fullBankCopy = JSON.parse(JSON.stringify(questionBank));
-            const shuffledBank = shuffleArray(fullBankCopy);
+            // 1. No duplicated expansion needed, just use core bank
+            const questionBank = [...coreQuestionBank];
             
+            // 2. Shuffle
+            const shuffledBank = shuffleArray(questionBank);
+            
+            // 3. Select Questions
             currentQuestions = shuffledBank.slice(0, numQuestions).map(q => {
                 return {
                     ...q,
