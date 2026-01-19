@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C級運動按摩 學科測驗</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #FDF6E3;
+        }
+
+        /* 馬卡龍色系 */
+        .macaron-pink { background-color: #FFB7B2; }
+        .macaron-green { background-color: #B5EAD7; }
+        .macaron-purple { background-color: #C7CEEA; }
+        .macaron-yellow { background-color: #FFFFB5; }
+        .macaron-blue { background-color: #A0E7E5; }
+        
+        .option-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .option-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .option-card.selected {
+            border-color: #FF9AA2;
+            background-color: #FFF0F0;
+        }
+
+        .btn-nav {
+            transition: transform 0.1s;
+        }
+        .btn-nav:active {
+            transform: scale(0.95);
+        }
+        
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-2 md:p-4">
+
+    <div id="app" class="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[750px] flex flex-col relative border-8 border-[#FFDAC1]">
+        
+        <!-- Header -->
+        <div id="quiz-header" class="hidden bg-[#FFDAC1] p-4 flex justify-between items-center sticky top-0 z-10">
+            <h2 class="text-xl font-bold text-gray-700">Q <span id="current-question-num">1</span> / <span id="total-question-num">20</span></h2>
+            <div class="bg-white px-4 py-2 rounded-full shadow-sm text-lg font-mono font-bold text-[#FF9AA2] flex items-center gap-2">
+                ⏱️ <span id="timer">00:00</span>
+            </div>
+        </div>
+
+        <!-- 1. Start Screen -->
+        <div id="start-screen" class="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gradient-to-b from-white to-[#FFF5E6]">
+            <h1 class="text-4xl md:text-5xl font-black mb-4 text-[#FF9AA2] tracking-wider drop-shadow-sm">
+                LEVEL C
+            </h1>
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-700 mb-8 leading-tight">
+                C級運動按摩<br>學科測驗
+            </h2>
+            
+            <div class="bg-white px-8 py-6 rounded-2xl shadow-sm mb-12 border-2 border-[#B5EAD7] w-full max-w-xl">
+                <p class="text-lg text-gray-500 font-bold mb-2">題庫來源：</p>
+                <p class="text-2xl font-black text-[#FF9AA2] leading-snug mb-4">中華民國運動促進協會<br>官方講義</p>
+                
+                <div class="w-full h-0.5 bg-gray-100 my-4"></div>
+                
+                <div class="flex justify-center items-center gap-2 text-gray-600 font-bold text-lg">
+                    <span>📝 題數：20題</span>
+                    <span class="text-gray-300">|</span>
+                    <span>🎯 及格分數：70</span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 mb-10 opacity-80">
+                <div class="w-12 h-12 rounded-full macaron-green animate-bounce delay-100"></div>
+                <div class="w-12 h-12 rounded-full macaron-purple animate-bounce delay-300"></div>
+                <div class="w-12 h-12 rounded-full macaron-yellow animate-bounce delay-500"></div>
+                <div class="w-12 h-12 rounded-full macaron-blue animate-bounce delay-700"></div>
+            </div>
+
+            <button onclick="startQuiz(20)" class="btn-nav text-3xl font-bold text-white bg-[#FFB7B2] hover:bg-[#FF9AA2] px-16 py-6 rounded-full shadow-lg transform hover:-translate-y-1 transition-all duration-300">
+                開始測驗
+            </button>
+        </div>
+
+        <!-- 2. Quiz Screen -->
+        <div id="quiz-screen" class="hidden flex-1 flex flex-col p-6 md:p-8 h-full overflow-hidden">
+            <div class="flex-1 overflow-y-auto no-scrollbar pb-4">
+                <div id="question-text" class="text-2xl md:text-3xl font-bold text-gray-800 mb-6 leading-snug">
+                    題目載入中...
+                </div>
+                
+                <!-- Options Container -->
+                <div id="options-container" class="space-y-3">
+                    <!-- Options will be injected here -->
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-100 bg-white z-10">
+                <button id="prev-btn" onclick="prevQuestion()" class="btn-nav hidden text-lg font-bold text-gray-600 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl">
+                    上一頁
+                </button>
+                <div class="flex-1"></div>
+                <button id="next-btn" onclick="nextQuestion()" class="btn-nav text-lg font-bold text-white bg-[#B5EAD7] hover:bg-[#A0E8D0] text-gray-700 px-6 py-3 rounded-xl shadow-md">
+                    下一頁
+                </button>
+                <button id="submit-btn" onclick="submitQuiz()" class="btn-nav hidden text-lg font-bold text-white bg-[#FFB7B2] hover:bg-[#FF9AA2] px-6 py-3 rounded-xl shadow-md">
+                    繳交試卷
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. Result Screen -->
+        <div id="result-screen" class="hidden flex-1 flex flex-col p-8 overflow-y-auto bg-gray-50">
+            <div class="text-center mb-10">
+                <h2 class="text-4xl font-bold text-gray-800 mb-2">測驗結果</h2>
+                
+                <!-- Pass/Fail Badge -->
+                <div id="pass-fail-badge" class="inline-block px-6 py-2 rounded-full text-xl font-bold mb-6">
+                    <!-- Javascript will fill this -->
+                </div>
+
+                <div class="flex justify-center items-center gap-6 mb-6">
+                    <div class="bg-white p-5 rounded-2xl shadow-md border-b-4 border-[#FFB7B2] w-32">
+                        <p class="text-gray-500 text-sm">得分</p>
+                        <p id="score-display" class="text-5xl font-black text-[#FF9AA2]">0</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-md border-b-4 border-[#B5EAD7] w-32">
+                        <p class="text-gray-500 text-sm">耗時</p>
+                        <p id="time-display" class="text-2xl font-bold text-[#7BC5AE]">00:00</p>
+                    </div>
+                </div>
+                <button onclick="restartQuiz()" class="text-xl font-bold text-white bg-[#C7CEEA] hover:bg-[#AAB6E6] px-10 py-3 rounded-full shadow-md transition-colors">
+                    回首頁
+                </button>
+            </div>
+
+            <div class="max-w-3xl mx-auto w-full">
+                <h3 class="text-2xl font-bold text-gray-700 mb-6 border-l-8 border-[#FFFFB5] pl-4">詳細解析</h3>
+                <div id="review-container" class="space-y-6">
+                    <!-- Review items injected here -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Data: Optimized Question Bank (Mid-Level Difficulty) ---
+        const coreQuestionBank = [
+            {
+                question: "肌筋膜 (Myofascia) 最重要的特性是什麼？",
+                options: ["它是一張從頭到腳連續不斷、立體的張力網絡", "它是一塊塊獨立分開的肌肉組織", "它只存在於關節處，用來連接骨頭", "它是人體最小的細胞單位"],
+                answer: "它是一張從頭到腳連續不斷、立體的張力網絡",
+                explanation: "肌筋膜不只是包裹肌肉的膜，它是連續性的全身網絡。這就是為什麼放鬆小腿可能改善背痛的原因（牽一髮動全身）。"
+            },
+            {
+                question: "關於「髂脛束 (IT Band)」，下列哪一個觀念是正確的？",
+                options: ["它不是肌肉，無法主動收縮，像是一條堅韌的纜繩", "它是大腿最有力的肌肉，可以主動用力", "它主要負責吸收養分", "它位於大腿內側，負責夾腿"],
+                answer: "它不是肌肉，無法主動收縮，像是一條堅韌的纜繩",
+                explanation: "髂脛束是結締組織（筋膜），它不會自己動。它的緊繃通常是被上面的肌肉（闊筋膜張肌、臀大肌）拉緊的。"
+            },
+            {
+                question: "現代人常見的「臀肌失憶症」，主要原因與後果為何？",
+                options: ["久坐導致臀肌長期被拉長無力，大腦忘記徵召它，改由腿後肌代償", "深蹲練太多導致臀肌過勞", "跑步姿勢錯誤導致臀肌受傷", "睡覺時間太少導致肌肉萎縮"],
+                answer: "久坐導致臀肌長期被拉長無力，大腦忘記徵召它，改由腿後肌代償",
+                explanation: "「久坐」是殺手。當臀大肌罷工，大腦只好叫腿後肌或腰部肌肉來幫忙（協同肌主導），常導致腰痠背痛。"
+            },
+            {
+                question: "「梨狀肌」如果太緊繃，最容易造成什麼問題？",
+                options: ["壓迫坐骨神經，導致屁股或腿部麻痛（假性坐骨神經痛）", "導致膝蓋積水", "造成腳踝扭傷", "引起消化不良"],
+                answer: "壓迫坐骨神經，導致屁股或腿部麻痛（假性坐骨神經痛）",
+                explanation: "坐骨神經剛好從梨狀肌下方穿過。梨狀肌一緊，就像夾子一樣夾住神經，症狀跟椎間盤突出很像。"
+            },
+            {
+                question: "進行滾筒放鬆 (SMR) 時，哪一種情況是絕對禁止按壓的？",
+                options: ["骨折、開放性傷口、深層靜脈栓塞或急性發炎時", "運動後覺得肌肉有點緊的時候", "睡覺前想放鬆的時候", "感覺肌肉有氣結的時候"],
+                answer: "骨折、開放性傷口、深層靜脈栓塞或急性發炎時",
+                explanation: "受傷最嚴重、結構受損或有血栓風險時，亂按只會讓傷勢惡化或造成危險。請尋求醫師協助。"
+            },
+            {
+                question: "臀大肌 (Gluteus Maximus) 的主要功能是什麼？",
+                options: ["將大腿向後伸展 (Hip Extension) 與外旋", "將大腿向內夾 (Adduction)", "將大腿向上抬高 (Flexion)", "控制膝蓋彎曲"],
+                answer: "將大腿向後伸展 (Hip Extension) 與外旋",
+                explanation: "臀大肌負責讓我們從坐姿站起來、爬樓梯、將腿往後踢，同時也是強力的外旋肌。"
+            },
+            {
+                question: "為什麼說肌筋膜是身體最大的「感覺器官」？",
+                options: ["因為它富含神經末梢，能隨時回報身體的姿勢與張力", "因為它負責傳遞痛覺給皮膚", "因為它面積最大", "因為它能感覺溫度變化"],
+                answer: "因為它富含神經末梢，能隨時回報身體的姿勢與張力",
+                explanation: "筋膜裡有大量的感測器（如肌梭、高基氏腱器），隨時告訴大腦「我們現在姿勢歪了沒」、「肌肉緊不緊」。"
+            },
+            {
+                question: "在滾筒放鬆時，找到激痛點（痠痛點）後的正確操作是？",
+                options: ["在痛點停留 30-60 秒，保持呼吸等待放鬆", "快速來回用力滾動，越痛越好", "立刻換位置，不要理它", "用力敲打它"],
+                answer: "在痛點停留 30-60 秒，保持呼吸等待放鬆",
+                explanation: "放鬆需要時間。持續穩定的壓力能啟動神經系統的「自體抑制」機制，讓肌肉慢慢鬆開。太快或太痛反而會讓肌肉更緊繃。"
+            },
+            {
+                question: "「圓肩」體態（肩膀內縮）的人，通常哪一組肌肉過於緊繃需要放鬆？",
+                options: ["胸大肌與胸小肌", "菱形肌與中斜方肌", "闊背肌", "肱三頭肌"],
+                answer: "胸大肌與胸小肌",
+                explanation: "前側的胸肌連在肋骨和肩膀上，太緊就會把肩膀往前拉。想改善圓肩，放鬆胸肌是第一步。"
+            },
+            {
+                question: "如果在進行「髖內收測試」時，腳放不下去（卡在半空中），通常代表哪裡太緊？",
+                options: ["大腿外側的髂脛束 (ITB) 或闊筋膜張肌 (TFL)", "大腿內側的內收肌", "肚子太小", "小腿後側"],
+                answer: "大腿外側的髂脛束 (ITB) 或闊筋膜張肌 (TFL)",
+                explanation: "這就像鼓皮繃太緊一樣。大腿外側太緊（TFL/ITB），就會拉住大腿，讓它沒辦法順利做內收（往內掉）的動作。"
+            },
+            {
+                question: "若大腿前側的「闊筋膜張肌 (TFL)」太緊，走路或深蹲時容易出現什麼代償？",
+                options: ["大腿不自覺往外轉（腳尖朝外撇）", "大腿內八", "膝蓋鎖死", "骨盆後傾"],
+                answer: "大腿不自覺往外轉（腳尖朝外撇）",
+                explanation: "TFL 太緊會拉扯髂脛束，並在動作中產生旋轉力矩，讓大腿骨不由自主地往外轉（外旋）。"
+            },
+            {
+                question: "「網球肘」雖然痛在手肘，但其實通常是哪裡的肌肉過度使用造成的？",
+                options: ["前臂伸腕肌群（控制手背往上翹的肌肉）", "上手臂的二頭肌", "肩膀的三角肌", "胸肌"],
+                answer: "前臂伸腕肌群（控制手背往上翹的肌肉）",
+                explanation: "打電腦、擰毛巾都會用到前臂伸肌。用過頭了，肌腱在手肘附著點就會發炎，這就是網球肘（肱骨外上髁炎）。"
+            },
+            {
+                question: "想要根本改善「臀肌失憶症」，在放鬆完緊繃肌肉後，最重要的步驟是？",
+                options: ["進行臀部啟動訓練 (Activation)，重新建立神經連結", "繼續按摩直到完全不痛", "多吃蛋白質", "立刻去跑步"],
+                answer: "進行臀部啟動訓練 (Activation)，重新建立神經連結",
+                explanation: "按摩只是解除抑制（鬆開煞車）。你必須主動訓練（踩油門），大腦才會重新學會「喔！原來這時候要用屁股出力」。"
+            },
+            {
+                question: "「足底筋膜炎」患者，除了放鬆腳底，放鬆哪裡也很有幫助？（基於筋膜連續性）",
+                options: ["小腿後側（腓腸肌、比目魚肌）", "大腿前側", "腹肌", "手臂"],
+                answer: "小腿後側（腓腸肌、比目魚肌）",
+                explanation: "這就是「淺背線」的概念。小腿筋膜、阿基里斯腱一路連到足底筋膜。放鬆小腿能有效減輕足底的拉扯張力。"
+            },
+            {
+                question: "在做「髖伸直測試」時，如果大腿抬不高，卻發現腰椎過度拱起，這代表？",
+                options: ["用腰部代償髖關節活動度不足（假性活動度）", "腰部柔軟度很好", "臀肌非常有力", "這是標準動作"],
+                answer: "用腰部代償髖關節活動度不足（假性活動度）",
+                explanation: "當大腿因為緊繃抬不起來，身體會偷吃步，拱腰讓腿「看起來」抬很高，這就是代償。"
+            },
+            {
+                question: "「腰方肌」位於腰椎兩側，如果它單側太緊，身體外觀可能會出現什麼變化？",
+                options: ["骨盆一高一低（長短腳的假象）", "嚴重的駝背", "O型腿", "頭部前傾"],
+                answer: "骨盆一高一低（長短腳的假象）",
+                explanation: "腰方肌連接著肋骨和骨盆。它一縮短，就會把同側的骨盆拉高，讓你覺得那隻腳好像變短了。"
+            },
+            {
+                question: "肌筋膜放鬆的主要目的「不包含」下列哪一項？",
+                options: ["永久性地增加肌肉力量", "改善血液循環與代謝", "降低肌肉張力，恢復彈性", "增加關節活動度"],
+                answer: "永久性地增加肌肉力量",
+                explanation: "放鬆是讓肌肉「恢復」到正常狀態。想變強壯、肌肉變大，必須靠阻力訓練（重訓）去破壞再修復，按摩本身不會長肌肉。"
+            },
+            {
+                question: "當我們坐著（髖關節彎曲 90 度）時，梨狀肌的功能會發生什麼變化？",
+                options: ["功能反轉：變成負責大腿外展與內旋", "功能不變：依然是外旋", "完全失去功能", "變成負責伸直膝蓋"],
+                answer: "功能反轉：變成負責大腿外展與內旋",
+                explanation: "這是梨狀肌特殊的生物力學特性。站著是外旋，坐著變成外展/內旋。這也是為什麼坐著翹二郎腿會拉扯到它的原因。"
+            },
+            {
+                question: "關於「核心肌群」的功能，下列敘述何者最核心？",
+                options: ["穩定脊椎與骨盆，作為四肢發力的穩固底座", "練出六塊肌給別人看", "讓跑步速度變快", "單純保護內臟"],
+                answer: "穩定脊椎與骨盆，作為四肢發力的穩固底座",
+                explanation: "核心就像身體的「地基」。地基穩了（脊椎骨盆穩定），手腳才能有力且安全地做動作。"
+            },
+            {
+                question: "做深蹲時，如果「腳跟容易離地」，通常暗示哪裡活動度受限？",
+                options: ["踝關節背屈受限（小腿後側太緊）", "髖關節太緊", "大腿前側太緊", "腳趾頭太短"],
+                answer: "踝關節背屈受限（小腿後側太緊）",
+                explanation: "蹲下去時，腳背要能往上勾（背屈）。如果小腿太緊勾不起來，身體為了保持平衡，腳跟就會被迫抬起來。"
+            }
+        ];
+
+        // --- App Logic ---
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let userAnswers = [];
+        let timerInterval;
+        let secondsElapsed = 0;
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function startQuiz(numQuestions) {
+            currentQuestionIndex = 0;
+            userAnswers = [];
+            secondsElapsed = 0;
+            
+            // 1. Get Core Questions
+            const questionBank = [...coreQuestionBank];
+            
+            // 2. Shuffle
+            const shuffledBank = shuffleArray(questionBank);
+            
+            // 3. Select Questions (Safe slice)
+            const actualNum = Math.min(numQuestions, shuffledBank.length);
+            currentQuestions = shuffledBank.slice(0, actualNum).map(q => {
+                return {
+                    ...q,
+                    options: shuffleArray([...q.options])
+                };
+            });
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            document.getElementById('quiz-screen').classList.add('flex');
+            document.getElementById('quiz-header').classList.remove('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+
+            document.getElementById('total-question-num').innerText = currentQuestions.length;
+            startTimer();
+            renderQuestion();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            document.getElementById('timer').innerText = "00:00";
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                const mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+                const secs = (secondsElapsed % 60).toString().padStart(2, '0');
+                document.getElementById('timer').innerText = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function renderQuestion() {
+            const q = currentQuestions[currentQuestionIndex];
+            document.getElementById('current-question-num').innerText = currentQuestionIndex + 1;
+            document.getElementById('question-text').innerText = q.question;
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            q.options.forEach(opt => {
+                const btn = document.createElement('div');
+                btn.className = `option-card w-full p-4 mb-3 rounded-2xl bg-white shadow-sm hover:bg-gray-50 flex items-center gap-4 text-lg md:text-xl font-medium text-gray-600`;
+                
+                const existingAnswer = userAnswers[currentQuestionIndex];
+                if (existingAnswer === opt) {
+                    btn.classList.add('selected');
+                }
+
+                btn.innerHTML = `
+                    <div class="w-6 h-6 md:w-8 md:h-8 rounded-full border-2 border-gray-300 flex-shrink-0 flex items-center justify-center transition-colors">
+                        <div class="w-3 h-3 md:w-4 md:h-4 rounded-full bg-[#FF9AA2] ${existingAnswer === opt ? '' : 'hidden'} check-mark"></div>
+                    </div>
+                    <span class="leading-normal">${opt}</span>
+                `;
+
+                btn.onclick = () => selectOption(btn, opt);
+                container.appendChild(btn);
+            });
+
+            document.getElementById('prev-btn').classList.toggle('hidden', currentQuestionIndex === 0);
+            const isLast = currentQuestionIndex === currentQuestions.length - 1;
+            document.getElementById('next-btn').classList.toggle('hidden', isLast);
+            document.getElementById('submit-btn').classList.toggle('hidden', !isLast);
+        }
+
+        function selectOption(btnElement, optionText) {
+            const allOpts = document.querySelectorAll('.option-card');
+            allOpts.forEach(el => {
+                el.classList.remove('selected');
+                el.querySelector('.check-mark').classList.add('hidden');
+                el.querySelector('.rounded-full.border-2').classList.remove('border-[#FF9AA2]');
+            });
+
+            btnElement.classList.add('selected');
+            btnElement.querySelector('.check-mark').classList.remove('hidden');
+            btnElement.querySelector('.rounded-full.border-2').classList.add('border-[#FF9AA2]');
+            userAnswers[currentQuestionIndex] = optionText;
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < currentQuestions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        }
+
+        function submitQuiz() {
+            clearInterval(timerInterval);
+            showResults();
+        }
+
+        function showResults() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('quiz-header').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+
+            let score = 0;
+            const reviewContainer = document.getElementById('review-container');
+            reviewContainer.innerHTML = '';
+
+            currentQuestions.forEach((q, idx) => {
+                const userAns = userAnswers[idx];
+                const isCorrect = userAns === q.answer;
+                if (isCorrect) score += (100 / currentQuestions.length);
+
+                const reviewItem = document.createElement('div');
+                reviewItem.className = "bg-white p-6 rounded-3xl shadow-sm border border-gray-100";
+                
+                reviewItem.innerHTML = `
+                    <div class="flex items-start gap-4 mb-4">
+                        <span class="bg-${isCorrect ? '[#B5EAD7]' : '[#FFB7B2]'} text-${isCorrect ? 'green' : 'red'}-700 px-3 py-1 rounded-lg font-bold text-sm whitespace-nowrap mt-1">
+                            ${isCorrect ? '正確' : '錯誤'}
+                        </span>
+                        <h4 class="text-xl font-bold text-gray-800 leading-normal">Q${idx + 1}. ${q.question}</h4>
+                    </div>
+                    <div class="space-y-2 mb-4 pl-2 md:pl-14">
+                        <div class="flex items-center gap-2 ${isCorrect ? 'text-green-600 font-bold' : 'text-red-500 line-through decoration-2'}">
+                            <span class="text-sm text-gray-400">您的答案：</span>
+                            <span>${userAns || "未作答"}</span>
+                        </div>
+                        ${!isCorrect ? `
+                        <div class="flex items-center gap-2 text-green-600 font-bold">
+                            <span class="text-sm text-gray-400">正確答案：</span>
+                            <span>${q.answer}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="bg-yellow-50 p-4 rounded-xl text-gray-600 text-base leading-relaxed border-l-4 border-[#FFFFB5] ml-0 md:ml-14">
+                        <span class="font-bold text-gray-500">解析：</span>${q.explanation}
+                    </div>
+                `;
+                reviewContainer.appendChild(reviewItem);
+            });
+
+            // Update Score & Time
+            const finalScore = Math.round(score);
+            document.getElementById('score-display').innerText = finalScore;
+            
+            const mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+            const secs = (secondsElapsed % 60).toString().padStart(2, '0');
+            document.getElementById('time-display').innerText = `${mins}:${secs}`;
+
+            // Pass/Fail Logic
+            const badge = document.getElementById('pass-fail-badge');
+            if (finalScore >= 70) {
+                badge.innerText = "🎉 恭喜及格";
+                badge.className = "inline-block px-8 py-3 rounded-full text-2xl font-black mb-6 bg-[#B5EAD7] text-teal-800 animate-bounce";
+            } else {
+                badge.innerText = "💪 再接再厲";
+                badge.className = "inline-block px-8 py-3 rounded-full text-2xl font-black mb-6 bg-[#FFB7B2] text-red-800";
+            }
+        }
+
+        function restartQuiz() {
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
